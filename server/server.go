@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -71,33 +70,13 @@ func (s *Server) prepareRedis() {
 
 func (s *Server) Runserver(host string, port int) (err error) {
 	http.HandleFunc("/", HandleConnections(s))
+	redisHandlers := make(map[string]func(message *redis.Message))
+
 	// go HandleChallenges(s)
 
-	go Handler(s, map[string]func(message *redis.Message){
+	redisHandlers["challenges.new"] = NewChallengeSub(s)
 
-		"challenges.new": func(message *redis.Message) {
-			fmt.Println("we are in")
-			var challenge interface{} // here this is map
-			err := json.Unmarshal([]byte(message.Payload), &challenge)
-			if err != nil {
-				log.Printf("error: %v", err)
-				return
-			}
-			fmt.Println(challenge)
-			s.Mu.Lock()
-			for client := range s.Clients {
-				client.Mu.Lock()
-				err := client.Ws.WriteJSON(challenge)
-				client.Mu.Unlock()
-				if err != nil {
-					log.Printf("error: %v", err)
-					delete(s.Clients, client)
-					client.Ws.Close()
-				}
-			}
-			s.Mu.Unlock()
-		},
-	})
+	go RedisHandler(s, redisHandlers)
 	log.Printf("Starting Server at %s:%v", host, port)
 	err = http.ListenAndServe(fmt.Sprintf("%s:%v", host, port), nil)
 	return

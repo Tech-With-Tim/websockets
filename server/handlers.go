@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -83,16 +82,17 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Handler(s *Server, handlers map[string]func(message *redis.Message)) {
-	for channel, handler := range handlers {
+func RedisHandler(s *Server, redisHandlers map[string]func(message *redis.Message)) {
+	for channel, handler := range redisHandlers {
 		ctx := context.Background()
 		pubsub := s.RedisClient.Subscribe(ctx, channel)
 		_, err := pubsub.Receive(ctx)
 		if err != nil {
 			panic(err)
-		} // try subscribe to channel from cli, check if messages get published
+		}
 		redisChan := pubsub.Channel()
 		go func(handler func(message *redis.Message)) {
+
 			for {
 				msg := <-redisChan
 				handler(msg)
@@ -102,35 +102,35 @@ func Handler(s *Server, handlers map[string]func(message *redis.Message)) {
 }
 
 // need better handlers
-func HandleChallenges(s *Server) {
-	var ctx = context.Background()
-
-	pubsub := s.RedisClient.Subscribe(ctx, "events")
-	_, err := pubsub.Receive(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	redisChan := pubsub.Channel()
-	var subEvent SubEvent
-
-	for {
-		msg := <-redisChan
-		err = json.Unmarshal([]byte(msg.Payload), &subEvent)
-		if err != nil {
-			log.Println(err)
-		}
-		s.Mu.Lock()
-		for client := range s.Clients {
-			client.Mu.Lock()
-			err := client.Ws.WriteJSON(subEvent)
-			client.Mu.Unlock()
-			if err != nil {
-				log.Printf("error: %v", err)
-				delete(s.Clients, client)
-				client.Ws.Close()
-			}
-		}
-		s.Mu.Unlock()
-	}
-}
+//func HandleChallenges(s *Server) {
+//	var ctx = context.Background()
+//
+//	pubsub := s.RedisClient.Subscribe(ctx, "events")
+//	_, err := pubsub.Receive(ctx)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	redisChan := pubsub.Channel()
+//	var subEvent SubEvent
+//
+//	for {
+//		msg := <-redisChan
+//		err = json.Unmarshal([]byte(msg.Payload), &subEvent)
+//		if err != nil {
+//			log.Println(err)
+//		}
+//		s.Mu.Lock()
+//		for client := range s.Clients {
+//			client.Mu.Lock()
+//			err := client.Ws.WriteJSON(subEvent)
+//			client.Mu.Unlock()
+//			if err != nil {
+//				log.Printf("error: %v", err)
+//				delete(s.Clients, client)
+//				client.Ws.Close()
+//			}
+//		}
+//		s.Mu.Unlock()
+//	}
+//}

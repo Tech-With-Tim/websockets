@@ -9,4 +9,7 @@ test:
 	@echo "Coverage"
 	go tool cover -func cover.out
 
-.PHONY: redis test
+lint:
+	golangci-lint run
+
+.PHONY: redis test lint
