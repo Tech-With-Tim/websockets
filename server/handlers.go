@@ -33,9 +33,8 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 		}()
 		s.Mu.Lock()
 		s.Clients[client] = true
-		s.Mu.Unlock()
 		fmt.Println(s.Clients)
-
+		s.Mu.Unlock()
 		go func() {
 			for {
 				client.Mu.Lock()
@@ -94,15 +93,17 @@ func HandleChallenges(s *Server) {
 		if err != nil {
 			log.Println(err)
 		}
-
+		s.Mu.Lock()
 		for client := range s.Clients {
 			client.Mu.Lock()
 			err := client.Ws.WriteJSON(subEvent)
 			client.Mu.Unlock()
 			if err != nil {
 				log.Printf("error: %v", err)
+				delete(s.Clients, client)
 				client.Ws.Close()
 			}
 		}
+		s.Mu.Unlock()
 	}
 }

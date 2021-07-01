@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gorilla/websocket"
@@ -24,7 +25,8 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func pingHandler(t *testing.T){
+func pingHandler(t *testing.T, wg *sync.WaitGroup){
+	defer wg.Done()
 	url := "ws" + strings.TrimPrefix(testServer.URL, "http")
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
@@ -34,7 +36,7 @@ func pingHandler(t *testing.T){
 		if err := ws.WriteJSON(map[string]interface{}{"op":"0"}); err != nil {
 			require.NoError(t, err)
 		}
-		expectedRes := &pingResponse{Operation: 0}
+		expectedRes := &pingResponse{Operation: "0"}
 		fmt.Println(expectedRes)
 		res := &pingResponse{}
 		err := ws.ReadJSON(res)
@@ -43,11 +45,16 @@ func pingHandler(t *testing.T){
 	}
 }
 func TestPing(t *testing.T) {
+	var wg sync.WaitGroup
+
 	for i:=0; i<5; i++{
-		go pingHandler(t)
+		wg.Add(1)
+		go pingHandler(t, &wg)
 	}
+	wg.Wait()
+
 }
 
 type pingResponse struct {
-	Operation int `json:"op"`
+	Operation string `json:"op"`
 }
