@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
 )
 
@@ -40,8 +41,8 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 				client.Mu.Lock()
 				err := client.Ws.WriteJSON(map[string]interface{}{
 					"op": "0",
-					"d": map[string]int64{
-						"t": time.Since(open).Milliseconds(),
+					"d": map[string]string{
+						"t": fmt.Sprint(time.Since(open).Milliseconds()),
 					},
 				})
 				client.Mu.Unlock()
@@ -54,9 +55,9 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 
 		for {
 			var request Request
-			err := client.Ws.SetReadDeadline(time.Now().Add(3 * time.Minute)) // change the time here :uganda"
+			err := client.Ws.SetReadDeadline(time.Now().Add(3 * time.Minute))
 			if err != nil {
-				log.Printf("error: %v", err)
+				log.Printf("er ror: %v", err)
 			}
 			err = client.Ws.ReadJSON(&request)
 			if err != nil {
@@ -69,8 +70,34 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			go callback(client, request)
+			go func() {
+				err := callback(client, request)
+				if err != nil {
+					s.Mu.Lock()
+					delete(s.Clients, client)
+					s.Mu.Unlock()
+					client.Ws.Close()
+				}
+			}()
 		}
+	}
+}
+
+func Handler(s *Server, handlers map[string]func(message *redis.Message)) {
+	for channel, handler := range handlers {
+		ctx := context.Background()
+		pubsub := s.RedisClient.Subscribe(ctx, channel)
+		_, err := pubsub.Receive(ctx)
+		if err != nil {
+			panic(err)
+		} // try subscribe to channel from cli, check if messages get published
+		redisChan := pubsub.Channel()
+		go func(handler func(message *redis.Message)) {
+			for {
+				msg := <-redisChan
+				handler(msg)
+			}
+		}(handler)
 	}
 }
 
