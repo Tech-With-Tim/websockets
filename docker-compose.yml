@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:6.2-alpine3.13
+    restart: always
+    
+  socket-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - DB_NAME=cdn
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - SECRET_KEY=mysecret # make sure to keep the same secret key in the jwt issuer
+      - REDIS_HOST=redis:6379
+      - REDIS_DB=0
+
+    depends_on:
+      - redis
+    links:
+      - redis
