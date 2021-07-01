@@ -3,6 +3,7 @@
 <h1>Tech With Tim - Socket-API</h1>
 
 <div>
+  
 [![codecov](https://codecov.io/gh/Tech-With-Tim/socket-api/branch/main/graph/badge.svg?token=1sWUihm6xR)](https://codecov.io/gh/Tech-With-Tim/socket-api)
 [![Lint & Test](https://github.com/Tech-With-Tim/socket-api/actions/workflows/lint-test.yml/badge.svg)](https://github.com/Tech-With-Tim/cdn/actions/workflows/lint-test.yml)
 [![GitHub Issues](https://img.shields.io/github/issues/Tech-With-Tim/CDN.svg)](https://github.com/Tech-With-Tim/CDN/issues)
