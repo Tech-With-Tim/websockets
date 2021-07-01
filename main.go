@@ -62,15 +62,6 @@ func commands() {
 	}
 }
 
-// only for testing
-// well not testing only... i think we will need that
-// like i said, the updating code function will be done through websockets
-// i won't spam the api lol
-// we still
-// wait why not lol, api will subsribe too ig :uganda:
-// yeah
-// yea we will use publish dont mind me
-// we will use  a channel named "saveCode"
 // func publish(s *server.Server) func(w http.ResponseWriter, r *http.Request) {
 // 	return func(w http.ResponseWriter, r *http.Request) {
 // 		ws, err := upgrader.Upgrade(w, r, nil)
