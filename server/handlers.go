@@ -55,8 +55,11 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 
 		for {
 			var request Request
-			client.Ws.SetReadDeadline(time.Now().Add(3 * time.Minute)) // change the time here :uganda"
-			err := client.Ws.ReadJSON(&request)
+			err := client.Ws.SetReadDeadline(time.Now().Add(3 * time.Minute)) // change the time here :uganda"
+			if err != nil {
+				log.Printf("error: %v", err)
+			}
+			err = client.Ws.ReadJSON(&request)
 			if err != nil {
 				log.Printf("error: %v", err)
 				break

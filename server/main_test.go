@@ -34,7 +34,7 @@ func pingHandler(t *testing.T){
 		if err := ws.WriteJSON(map[string]interface{}{"op":"0"}); err != nil {
 			require.NoError(t, err)
 		}
-		expectedRes := &pingResponse{operation: 0}
+		expectedRes := &pingResponse{Operation: 0}
 		fmt.Println(expectedRes)
 		res := &pingResponse{}
 		err := ws.ReadJSON(res)
@@ -49,5 +49,5 @@ func TestPing(t *testing.T) {
 }
 
 type pingResponse struct {
-	operation int `json:"op"`
+	Operation int `json:"op"`
 }
