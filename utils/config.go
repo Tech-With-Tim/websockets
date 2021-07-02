@@ -19,6 +19,11 @@ type Config struct {
 	MaxFileSize      int64  `mapstructure:"MAX_FILE_SIZE" env:"MAX_FILE_SIZE"`
 }
 
+// LoadConfig Loads the config from the .env file,
+// if not present it loads it from the environment variables
+// Usage: conf, err := LoadConfig("../","filename")
+// filename is assumed to have a .env extension
+// do not add .env to the filename
 func LoadConfig(path string, name string) (config Config, err error) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName(name)
