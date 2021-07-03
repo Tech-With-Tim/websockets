@@ -1,6 +1,10 @@
 package server
 
-import "fmt"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+)
 
 func Ping(client *Client, request Request) error {
 	client.Mu.Lock()
@@ -18,4 +22,15 @@ func Identify(client *Client, request Request) error {
 		return fmt.Errorf("no token found")
 	}
 	return nil
+}
+
+func PublishToRedis(s *Server) func(client *Client, request Request) error {
+	return func(client *Client, request Request) error {
+		msg, err := json.Marshal(request.Data)
+		if err != nil {
+			return fmt.Errorf("error: %v", err)
+		}
+		s.RedisClient.Publish(context.Background(), "challenges.new", msg)
+		return nil
+	}
 }

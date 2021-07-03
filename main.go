@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
@@ -43,25 +40,7 @@ func commands() {
 			},
 			Action: func(c *cli.Context) error {
 				s := server.CreateServer()
-				// Temporary Command
-				err := s.RegisterCommand("1", func(sender *server.Client, request server.Request) error {
-					msg, err := json.Marshal(request.Data)
-					if err != nil {
-						return fmt.Errorf("error: %v", err)
-					}
-					s.RedisClient.Publish(context.Background(), "challenges.new", msg)
-					return nil
-				})
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = s.RegisterCommand("2", server.Identify)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				err = s.Runserver(c.String("host"), c.Int("port"))
+				err := s.Runserver(c.String("host"), c.Int("port"))
 				return err
 			},
 		},

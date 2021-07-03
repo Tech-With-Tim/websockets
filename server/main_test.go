@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Tech-With-Tim/Socket-Api/utils"
-	"github.com/go-redis/redis/v8"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -28,8 +27,10 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
-	redisHandlers := make(map[string]func(message *redis.Message))
-	redisHandlers["challenges.new"] = NewChallengeSub(s)
+	err = s.RegisterRedisHandler("challenges.new", NewChallengeSub(s))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	err = s.RegisterCommand("1", func(sender *Client, request Request) error {
 		msg, err := json.Marshal(request.Data)
@@ -43,7 +44,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	go RedisHandler(s, redisHandlers)
+	go RedisHandler(s)
 
 	//http.HandleFunc("/", HandleConnections(s))
 	testServer = httptest.NewServer(http.HandlerFunc(HandleConnections(s)))
@@ -103,6 +104,7 @@ func TestSockets(t *testing.T) {
 	for i:=0; i<5; i++{
 		wg.Add(1)
 		go pingHandler(t, &wg)
+		fmt.Println("HI")
 	}
 	wg.Wait()
 	wg.Add(1)

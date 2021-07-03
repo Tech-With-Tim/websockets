@@ -11,36 +11,58 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+
+// Server struct is the core of this application
+// It has 6 properties
+// Mu -> sync.Mutex is to prevent concurrent writing to Clients
+// Clients map[*Client]bool is a map of Client structs connected through sockets
+// Operations are all the operations available to the clients (ex: ping, authenticate, publish)
+// Operations have a code like 1, 2, ...
+// RedisHandlers is a map of all RedisHandlers for specific RedisChannels that
+// the application is subscribed to
 type Server struct {
-	Mu          sync.Mutex
-	Clients     map[*Client]bool //
-	RedisClient *redis.Client
-	Operations  map[string]func(client *Client, request Request) error
-	Config      utils.Config
+	Mu            sync.Mutex
+	Clients       map[*Client]bool //
+	RedisClient   *redis.Client
+	Operations    map[string]func(client *Client, request Request) error
+	Config        utils.Config
+	RedisHandlers map[string]func(pubSubChan <- chan *redis.Message)
 }
 
+// Client is a struct for a single Client connected through sockets
+// Mu sync.Mutex is to prevent concurrent writing to Ws *websocket.Conn
+// Ws *websocket.Conn is a gorilla/websocket upgraded connection to the client
 type Client struct {
 	Mu sync.Mutex
 	Ws *websocket.Conn
 }
 
+// CreateServer is returns a ready to use *Server
+// Usage server := CreateServer()
 func CreateServer() *Server {
 	var err error
 	server := &Server{}
 	server.Clients = make(map[*Client]bool)
 	server.Operations = make(map[string]func(client *Client, request Request) error)
+	server.RedisHandlers = make(map[string]func(pubSubChan <- chan *redis.Message))
 	server.Config, err = utils.LoadConfig("../", "app")
 	if err != nil {
 		log.Println(err)
 	}
 	server.prepareRedis()
-	err = server.RegisterCommand("0", Ping)
-	if err != nil {
-		log.Fatal(err)
-	}
 	return server
 }
 
+// RegisterCommand is a method of s *Server
+// It is used to safely add Operations *Server.Operations
+// to the server.
+// If there already exists a command with the operation code
+// It returns an error
+// Usage:
+// err := s.RegisterCommand("1", Myfunc)
+// if err != nil{
+// 	log.Fatalln(err)
+// }
 func (s *Server) RegisterCommand(opCode string, callback func(client *Client, request Request) error) error {
 	_, ok := s.Operations[opCode]
 	if ok {
@@ -51,6 +73,29 @@ func (s *Server) RegisterCommand(opCode string, callback func(client *Client, re
 	return nil
 }
 
+// RegisterRedisHandler is a method of s *Server
+// It is used to safely add Redis Handlers func(pubSubChan <- chan *redis.Message)
+// to the server.
+// If there already exists a command with the operation code
+// It returns an error
+// Usage:
+// err := s.RegisterRedisHandler("myChannel", Myfunc)
+// if err != nil{
+// 	log.Fatalln(err)
+// }
+func (s *Server) RegisterRedisHandler(channelName string, handler func(pubSubChan <- chan *redis.Message)) error {
+	_, ok := s.RedisHandlers[channelName]
+	if ok {
+		return fmt.Errorf("a handler for the redis channel: %s already exists", channelName)
+	}
+	s.RedisHandlers[channelName] = handler
+
+	return nil
+}
+
+// UseCommand is used in HandleConnections
+// When HandleConnections recieves an operation code from the client
+// It uses UseCommand to return the corresponding function for the operation code
 func (s *Server) UseCommand(opCode string) (func(client *Client, request Request) error, error) {
 	callback, ok := s.Operations[opCode]
 	if !ok {
@@ -59,6 +104,7 @@ func (s *Server) UseCommand(opCode string) (func(client *Client, request Request
 	return callback, nil
 }
 
+// prepareRedis Prepares a Redis Connection
 func (s *Server) prepareRedis() {
 	s.RedisClient = redis.NewClient(
 		&redis.Options{
@@ -68,15 +114,39 @@ func (s *Server) prepareRedis() {
 		})
 }
 
+// Runserver is used in main.go
+// it prepares the server,
+// adds registered redis handlers,
+// adds registerd operations,
+// and runs the server
 func (s *Server) Runserver(host string, port int) (err error) {
 	http.HandleFunc("/", HandleConnections(s))
-	redisHandlers := make(map[string]func(message *redis.Message))
 
-	// go HandleChallenges(s)
+	// Register Redis Handlers here
+	err = s.RegisterRedisHandler("challenges.new", NewChallengeSub(s))
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	redisHandlers["challenges.new"] = NewChallengeSub(s)
+	// Run Go Routine to handle Redis Events
+	go RedisHandler(s)
 
-	go RedisHandler(s, redisHandlers)
+	// Register Commands here
+	err = s.RegisterCommand("0", Ping)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.RegisterCommand("1", PublishToRedis(s))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = s.RegisterCommand("2", Identify)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Printf("Starting Server at %s:%v", host, port)
 	err = http.ListenAndServe(fmt.Sprintf("%s:%v", host, port), nil)
 	return
