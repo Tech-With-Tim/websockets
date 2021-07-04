@@ -57,7 +57,7 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					break
 				}
-				time.Sleep(5 * time.Second)
+				time.Sleep(20 * time.Second)
 			}
 		}()
 

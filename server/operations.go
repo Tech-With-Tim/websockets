@@ -16,13 +16,13 @@ func Ping(client *Client, request Request) error {
 	return nil
 }
 
-func Identify(client *Client, request Request) error {
-	_, ok := (request.Data.(map[string]interface{}))["token"]
-	if !ok {
-		return fmt.Errorf("no token found")
-	}
-	return nil
-}
+//func Identify(client *Client, request Request) error {
+//	_, ok := (request.Data.(map[string]interface{}))["token"]
+//	if !ok {
+//		return fmt.Errorf("no token found")
+//	}
+//	return nil
+//}
 
 func PublishToRedis(s *Server) func(client *Client, request Request) error {
 	return func(client *Client, request Request) error {
