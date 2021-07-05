@@ -70,6 +70,6 @@ jobs:
           createPR: "false"
           updateFile: "true"
           message: "Redeploy Websockets"
-          valueFile: "sockets/deployment.yml"
+          valueFile: "sockets/deployment.yaml"
           propertyPath: "spec.template.spec.containers.0.image"
           value: "techwithtim/socket-api:${{ github.sha }}"
