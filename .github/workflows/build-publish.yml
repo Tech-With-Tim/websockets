@@ -58,18 +58,18 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v2
         with:
-            repository: Tech-With-Tim/k8s
-            token: ${{ secrets.REPO_TOKEN }}
+          repository: Tech-With-Tim/k8s
+          token: ${{ secrets.REPO_TOKEN }}
 
       - name: Deploy to Kubernetes
         uses: fjogeleit/yaml-update-action@master
         with:
-            repository: Tech-With-Tim/k8s
-            token: ${{ secrets.REPO_TOKEN }}
-            branch: "main"
-            createPR: "false"
-            updateFile: "true"
-            message: "Redeploy Websockets"
-            valueFile: "sockets/deployment.yml"
-            propertyPath: "spec.template.spec.containers.0.image"
-            value: "techwithtim/socket-api:${{ github.sha }}"
+          repository: Tech-With-Tim/k8s
+          token: ${{ secrets.REPO_TOKEN }}
+          branch: "main"
+          createPR: "false"
+          updateFile: "true"
+          message: "Redeploy Websockets"
+          valueFile: "sockets/deployment.yml"
+          propertyPath: "spec.template.spec.containers.0.image"
+          value: "techwithtim/socket-api:${{ github.sha }}"
