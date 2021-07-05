@@ -24,6 +24,9 @@ func Ping(client *Client, request Request) error {
 //	return nil
 //}
 
+// PubslishToredis is a temporary command
+// When Client ssends {'op':'1':'d':{somedata}}
+// it publishes the data to the "challenges.new" channel
 func PublishToRedis(s *Server) func(client *Client, request Request) error {
 	return func(client *Client, request Request) error {
 		msg, err := json.Marshal(request.Data)

@@ -2,14 +2,19 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/go-redis/redis/v8"
 	"log"
+
+	"github.com/go-redis/redis/v8"
 )
 
-func NewChallengeSub(s *Server) func(pubSubChan <- chan *redis.Message){
-	return func(pubSubChan <- chan *redis.Message) {
+// NewChallengeSub subscribes to challenges.new
+// channel in redis.
+// It sends recieved values to all connected clients
+func NewChallengeSub(s *Server) func(pubSubChan <-chan *redis.Message) {
+	return func(pubSubChan <-chan *redis.Message) {
 		var challenge interface{}
 		for {
+			// pubSubChan is go channel for the subscribed channel on redis
 			message := <-pubSubChan
 			err := json.Unmarshal([]byte(message.Payload), &challenge)
 			if err != nil {
@@ -19,6 +24,7 @@ func NewChallengeSub(s *Server) func(pubSubChan <- chan *redis.Message){
 			s.Mu.Lock()
 			for client := range s.Clients {
 				client.Mu.Lock()
+				// Write to client
 				err := client.Ws.WriteJSON(challenge)
 				client.Mu.Unlock()
 				if err != nil {

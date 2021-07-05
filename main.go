@@ -46,34 +46,3 @@ func commands() {
 		},
 	}
 }
-
-// func publish(s *server.Server) func(w http.ResponseWriter, r *http.Request) {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ws, err := upgrader.Upgrade(w, r, nil)
-// 		if err != nil {
-// 			log.Println(err.Error())
-// 		}
-// 		defer ws.Close()
-// 		s.Clients[ws] = true
-// 		fmt.Println(s.Clients)
-// 		for {
-// 			var challenge Challenge
-// 			err := ws.ReadJSON(&challenge)
-// 			if err != nil {
-// 				log.Printf("error: %v", err)
-// 				delete(s.Clients, ws)
-// 				break
-// 			}
-// 			msg, err := json.Marshal(challenge)
-// 			if err != nil {
-// 				log.Println(err)
-// 			}
-// 			err = s.RedisClient.Publish(r.Context(), "challenges", msg).Err()
-// 			if err != nil {
-// 				log.Println(err)
-// 			}
-
-// 		}
-// 	}
-
-// }
