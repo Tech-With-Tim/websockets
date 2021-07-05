@@ -68,7 +68,7 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 			// if exceeds deadline, client connection is closed
 			err := client.Ws.SetReadDeadline(time.Now().Add(3 * time.Minute))
 			if err != nil {
-				log.Printf("er ror: %v", err)
+				log.Printf("error: %v", err)
 			}
 
 			// Listen incoming Json Requests
