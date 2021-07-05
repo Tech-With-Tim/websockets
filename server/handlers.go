@@ -101,49 +101,22 @@ func HandleConnections(s *Server) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RedisHandler subscribes too all registered
+// Redis Channels and runs the respective handlers in
+// goroutines
 func RedisHandler(s *Server) {
+	// loop over the hanlders map
 	for channel, handler := range s.RedisHandlers {
 		ctx := context.Background()
+		// subscribe to redis channel
 		pubsub := s.RedisClient.Subscribe(ctx, channel)
+		// try recieving once
 		_, err := pubsub.Receive(ctx)
 		if err != nil {
 			panic(err)
 		}
 		redisChan := pubsub.Channel()
+		// run handler
 		go handler(redisChan)
 	}
 }
-
-// need better handlers
-//func HandleChallenges(s *Server) {
-//	var ctx = context.Background()
-//
-//	pubsub := s.RedisClient.Subscribe(ctx, "events")
-//	_, err := pubsub.Receive(ctx)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	redisChan := pubsub.Channel()
-//	var subEvent SubEvent
-//
-//	for {
-//		msg := <-redisChan
-//		err = json.Unmarshal([]byte(msg.Payload), &subEvent)
-//		if err != nil {
-//			log.Println(err)
-//		}
-//		s.Mu.Lock()
-//		for client := range s.Clients {
-//			client.Mu.Lock()
-//			err := client.Ws.WriteJSON(subEvent)
-//			client.Mu.Unlock()
-//			if err != nil {
-//				log.Printf("error: %v", err)
-//				delete(s.Clients, client)
-//				client.Ws.Close()
-//			}
-//		}
-//		s.Mu.Unlock()
-//	}
-//}
