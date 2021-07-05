@@ -114,36 +114,53 @@ func (s *Server) prepareRedis() {
 		})
 }
 
-// Runserver is used in main.go
+func (s *Server) RegisterCommands() error {
+	err := s.RegisterCommand("0", Ping)
+	if err != nil {
+		return err
+	}
+
+	err = s.RegisterCommand("1", PublishToRedis(s))
+	if err != nil {
+		return err
+	}
+
+	//err = s.RegisterCommand("2", Identify)
+	//if err != nil {
+	//	return err
+	//}
+	return nil
+}
+
+func (s *Server) RegisterRedisHandlers() error {
+	err := s.RegisterRedisHandler("challenges.new", NewChallengeSub(s))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RunServer is used in main.go
 // it prepares the server,
 // adds registered redis handlers,
 // adds registerd operations,
 // and runs the server
-func (s *Server) Runserver(host string, port int) (err error) {
+
+func (s *Server) RunServer(host string, port int) (err error) {
 	http.HandleFunc("/", HandleConnections(s))
 
-	// Register Redis Handlers here
-	err = s.RegisterRedisHandler("challenges.new", NewChallengeSub(s))
-	if err != nil {
+
+
+	err = s.RegisterRedisHandlers()
+	if err != nil{
 		log.Fatal(err)
 	}
 
 	// Run Go Routine to handle Redis Events
 	go RedisHandler(s)
 
-	// Register Commands here
-	err = s.RegisterCommand("0", Ping)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = s.RegisterCommand("1", PublishToRedis(s))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = s.RegisterCommand("2", Identify)
-	if err != nil {
+	err = s.RegisterCommands()
+	if err != nil{
 		log.Fatal(err)
 	}
 

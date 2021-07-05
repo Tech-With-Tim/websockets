@@ -40,7 +40,7 @@ func commands() {
 			},
 			Action: func(c *cli.Context) error {
 				s := server.CreateServer()
-				err := s.Runserver(c.String("host"), c.Int("port"))
+				err := s.RunServer(c.String("host"), c.Int("port"))
 				return err
 			},
 		},
