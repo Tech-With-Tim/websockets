@@ -1,12 +1,11 @@
 version: "3.9"
 
 services:
-
   redis:
-    image: redis:6.2-alpine3.13
-    restart: always
-    
-  socket-api:
+    image: redis:6.2
+    restart: unless-stopped
+
+  websocket:
     build:
       context: .
       dockerfile: Dockerfile
@@ -21,7 +20,6 @@ services:
       - SECRET_KEY=mysecret # make sure to keep the same secret key in the jwt issuer
       - REDIS_HOST=redis:6379
       - REDIS_DB=0
-
     depends_on:
       - redis
     links:
