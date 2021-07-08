@@ -16,6 +16,12 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v2 # Checking out the repo
 
+      - name: Create SHA Container Tag
+        id: sha_tag
+        run: |
+          tag=$(cut -c 1-7 <<< $GITHUB_SHA)
+          echo "::set-output name=tag::$tag"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
@@ -43,8 +49,8 @@ jobs:
         with:
           push: true
           tags: |
-            techwithtim/socket-api:latest
-            techwithtim/socket-api:${{ github.sha }}
+            techwithtim/websockets:${{ steps.sha_tag.outputs.tag }}
+            techwithtim/websockets:latest
           builder: ${{ steps.buildx.outputs.name }}
           cache-to: type=local,dest=/tmp/.buildx-cache
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -61,6 +67,12 @@ jobs:
           repository: Tech-With-Tim/k8s
           token: ${{ secrets.REPO_TOKEN }}
 
+      - name: Create SHA Container Tag
+        id: sha_tag
+        run: |
+          tag=$(cut -c 1-7 <<< $GITHUB_SHA)
+          echo "::set-output name=tag::$tag"
+
       - name: Deploy to Kubernetes
         uses: fjogeleit/yaml-update-action@master
         with:
@@ -69,7 +81,7 @@ jobs:
           branch: "main"
           createPR: "false"
           updateFile: "true"
-          message: "Redeploy Websockets"
+          message: "Redeploy Websockets `${{ steps.sha_tag.outputs.tag }}`"
           valueFile: "sockets/deployment.yaml"
           propertyPath: "spec.template.spec.containers.0.image"
-          value: "techwithtim/socket-api:${{ github.sha }}"
+          value: "techwithtim/websockets:${{ steps.sha_tag.outputs.tag }}"
