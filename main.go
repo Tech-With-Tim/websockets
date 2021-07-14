@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/Tech-With-Tim/Socket-Api/server"
