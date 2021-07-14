@@ -1,15 +1,16 @@
 package server
 
 import (
-	"github.com/Tech-With-Tim/Socket-Api/utils"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Tech-With-Tim/Socket-Api/utils"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/require"
 )
 
 var expectedResponses = [4]interface{}{
@@ -60,7 +61,7 @@ func recieveRedisSub(t *testing.T, wg *sync.WaitGroup, testServerUrl string) {
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
 	defer ws.Close()
-	for ; count < 50; {
+	for count < 50 {
 		var res redisReponse
 		err = ws.ReadJSON(&res)
 		require.NoError(t, err)
@@ -97,7 +98,7 @@ func TestSockets(t *testing.T) {
 		go pingHandler(t, &wg, testServer.URL)
 	}
 
-	for count := 0; count < 1000; count++ {
+	for count := 0; count < 10; count++ {
 		wg.Add(1)
 		go recieveRedisSub(t, &wg, testServer.URL)
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-
 // Server struct is the core of this application
 // It has 6 properties
 // Mu -> sync.Mutex is to prevent concurrent writing to Clients
@@ -26,7 +25,7 @@ type Server struct {
 	RedisClient   *redis.Client
 	Operations    map[string]func(client *Client, request Request) error
 	Config        utils.Config
-	RedisHandlers map[string]func(pubSubChan <- chan *redis.Message)
+	RedisHandlers map[string]func(pubSubChan <-chan *redis.Message)
 }
 
 // Client is a struct for a single Client connected through sockets
@@ -44,7 +43,7 @@ func CreateServer() *Server {
 	server := &Server{}
 	server.Clients = make(map[*Client]bool)
 	server.Operations = make(map[string]func(client *Client, request Request) error)
-	server.RedisHandlers = make(map[string]func(pubSubChan <- chan *redis.Message))
+	server.RedisHandlers = make(map[string]func(pubSubChan <-chan *redis.Message))
 	server.Config, err = utils.LoadConfig("../", "app")
 	if err != nil {
 		log.Println(err)
@@ -83,7 +82,7 @@ func (s *Server) RegisterCommand(opCode string, callback func(client *Client, re
 // if err != nil{
 // 	log.Fatalln(err)
 // }
-func (s *Server) RegisterRedisHandler(channelName string, handler func(pubSubChan <- chan *redis.Message)) error {
+func (s *Server) RegisterRedisHandler(channelName string, handler func(pubSubChan <-chan *redis.Message)) error {
 	_, ok := s.RedisHandlers[channelName]
 	if ok {
 		return fmt.Errorf("a handler for the redis channel: %s already exists", channelName)
@@ -149,10 +148,8 @@ func (s *Server) RegisterRedisHandlers() error {
 func (s *Server) RunServer(host string, port int) (err error) {
 	http.HandleFunc("/", HandleConnections(s))
 
-
-
 	err = s.RegisterRedisHandlers()
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -160,7 +157,7 @@ func (s *Server) RunServer(host string, port int) (err error) {
 	go RedisHandler(s)
 
 	err = s.RegisterCommands()
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 
