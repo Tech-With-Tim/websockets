@@ -61,7 +61,7 @@ func recieveRedisSub(t *testing.T, wg *sync.WaitGroup, testServerUrl string) {
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	require.NoError(t, err)
 	defer ws.Close()
-	for count < 50 {
+	for count < 10 {
 		var res redisReponse
 		err = ws.ReadJSON(&res)
 		require.NoError(t, err)
@@ -93,17 +93,17 @@ func TestSockets(t *testing.T) {
 	//Test pings
 	testServer := runTestServer(t)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 4; i++ {
 		wg.Add(1)
 		go pingHandler(t, &wg, testServer.URL)
 	}
 
-	for count := 0; count < 10; count++ {
+	for count := 0; count < 5; count++ {
 		wg.Add(1)
 		go recieveRedisSub(t, &wg, testServer.URL)
 	}
 	time.Sleep(5 * time.Second)
-	for count := 0; count < 50; count++ {
+	for count := 0; count < 10; count++ {
 		wg.Add(1)
 		time.Sleep(20 * time.Microsecond)
 		go publishRedis(t, &wg, testServer.URL)
